@@ -87,6 +87,17 @@ With the server running, open **http://127.0.0.1:8000/** (or your chosen port) f
 
 Pinned transitive versions: `requirements.lock` (optional `pip install -r requirements.lock` before editable install for stricter CI). Optional: [Dockerfile](Dockerfile) for a minimal runtime image.
 
+### Deploy backend on Render
+
+1. Push this repo to GitHub and open [Render](https://render.com) → **New** → **Blueprint** (or **Web Service** with **Docker**).
+2. Select the repo; Render uses [`render.yaml`](render.yaml) and the root [`Dockerfile`](Dockerfile).
+3. In the service **Environment**, add **`M1_RAG_OPENROUTER_API_KEY`** (or **`M1_RAG_LLM_API_KEY`**) — same as local `.env`. Render sets **`PORT`** automatically; the API binds **`0.0.0.0`** and uses that port.
+4. After deploy, check **`https://<your-service>.onrender.com/health`** → `{"status":"ok"}`.
+5. **Index:** the container starts with an **empty** `data/` directory unless you add a [persistent disk](https://render.com/docs/disks) or run **`m1-rag-ingest`** (e.g. one-off job or locally) and sync artifacts — otherwise retrieval has nothing to search. SQLite thread storage is also on ephemeral disk unless you attach a disk and point `api.thread_store_path` at it via a custom config.
+6. Point the Next.js app at the API: **`NEXT_PUBLIC_M1_RAG_API_URL=https://<your-service>.onrender.com`** in `web/.env.local` (production env on Vercel, etc.).
+
+On the **free** tier, web services **spin down** when idle; the first request after idle can take ~30–60s while the instance wakes.
+
 ## Configuration
 
 - **Data** (committed): `config/default.yaml` — allowlist hosts, embedding model id, vector DB backend/name/path, retrieval `top_k`, `llm.*`, `api.thread_store_path`, `observability.*` (Phase 9).

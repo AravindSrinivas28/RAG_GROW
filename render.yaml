@@ -1,0 +1,19 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Deploy: connect repo in Render → New → Blueprint → select render.yaml
+# Or paste this file when creating a Web Service from Docker.
+
+version: "1"
+services:
+  - type: web
+    name: m1-rag-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      # Set in the dashboard or here (use sync: false for secret values).
+      - key: M1_RAG_OPENROUTER_API_KEY
+        sync: false
+      # Optional: M1_RAG_LLM_API_KEY — if you use it instead of OpenRouter

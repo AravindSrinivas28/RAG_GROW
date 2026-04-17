@@ -197,14 +197,28 @@ def run() -> None:
     Host/port: ``M1_RAG_API_HOST`` / ``M1_RAG_API_PORT`` (also read from ``.env`` via
     :class:`m1_rag.settings.SecretsSettings`). Defaults: ``127.0.0.1:8000``.
     If another app uses 8000, set e.g. ``M1_RAG_API_PORT=8765``.
+
+    **Cloud (e.g. Render):** platforms set ``PORT``; when present we bind that
+    port and default host to ``0.0.0.0`` unless ``M1_RAG_API_HOST`` is set.
     """
+    import os
+
     import uvicorn
 
     from m1_rag.settings import SecretsSettings
 
     s = SecretsSettings()
-    host = (s.api_host or "").strip() or "127.0.0.1"
-    port = s.api_port if s.api_port is not None else 8000
+    port_env = os.environ.get("PORT")
+    port = s.api_port
+    if port is None and port_env is not None:
+        port = int(port_env)
+    if port is None:
+        port = 8000
+
+    host = (s.api_host or "").strip()
+    if not host:
+        host = "0.0.0.0" if port_env is not None else "127.0.0.1"
+
     uvicorn.run("m1_rag.api:app", host=host, port=port, reload=False)
 
 
