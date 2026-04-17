@@ -1,0 +1,48 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "m1-rag"
+version = "0.1.0"
+description = "Facts-only mutual fund FAQ assistant (RAG) — Phase 0 foundation"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.6,<3",
+    "pydantic-settings>=2.2,<3",
+    "PyYAML>=6.0.1,<7",
+    "httpx>=0.27,<1",
+    "trafilatura>=1.8,<2",
+    "lxml_html_clean>=0.4,<1",
+    "pypdf>=4.0,<6",
+    "chromadb>=0.5,<1",
+    "openai>=1.40,<2",
+    "sentence-transformers>=3.0,<4",
+    "transformers>=4.40,<5",
+    "fastapi>=0.115,<1",
+    "uvicorn[standard]>=0.30,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0,<9",
+]
+
+[project.scripts]
+m1-rag-scrape = "m1_rag.scrape:main"
+m1-rag-ingest = "m1_rag.ingest:main"
+m1-rag-retrieve = "m1_rag.retrieval:main"
+m1-rag-api = "m1_rag.api:run"
+m1-rag-index-inspect = "m1_rag.index_inspect:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/m1_rag"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

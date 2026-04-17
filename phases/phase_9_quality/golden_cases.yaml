@@ -1,0 +1,21 @@
+# Phase 9 offline golden cases (rag-architecture.md §10.2).
+# Run: pytest tests/test_golden_offline.py
+
+refusal_router:
+  # Advisory / comparative → refusal path (no retrieval).
+  - id: RF-01-advisory
+    query: "Should I invest in HDFC Flexi Cap?"
+    expect_refusal: true
+  - id: RF-02-comparative
+    query: "Which fund is better, Fund A or Fund B?"
+    expect_refusal: true
+
+pii_router:
+  - id: PR-01-pan
+    query: "My PAN is ABCDE1234F what is SIP?"
+    expect_refusal: true
+
+factual_router:
+  - id: RF-06-factual
+    query: "What is the ELSS lock-in period?"
+    expect_refusal: false

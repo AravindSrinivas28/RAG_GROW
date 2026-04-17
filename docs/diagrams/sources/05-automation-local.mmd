@@ -1,0 +1,14 @@
+flowchart LR
+    subgraph local["Developer machine"]
+        L1[git clone]
+        L2[m1-rag-ingest]
+        L3[data/vector_store persists]
+        L1 --> L2 --> L3
+    end
+
+    subgraph ci["GitHub Actions"]
+        C1[cron / workflow_dispatch]
+        C2[m1_rag.ingest]
+        C3[runner disk discarded]
+        C1 --> C2 --> C3
+    end

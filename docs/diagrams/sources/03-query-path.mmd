@@ -1,0 +1,14 @@
+flowchart TD
+    A[POST /threads/id/messages<br/>user text] --> R{Router<br/>rules}
+    R -->|advisory / PII| REF[Refusal template<br/>+ educational URL]
+    R -->|factual| Q[preprocess_query]
+    Q --> E[Embed query<br/>same BGE model]
+    E --> CH[(Chroma ANN<br/>top-k + optional filters)]
+    CH -->|empty / low confidence| ABS[Abstention message<br/>+ link]
+    CH -->|chunks OK| G[Grounded LLM<br/>JSON: answer + citation + date]
+    G --> P[Post-checks<br/>≤3 sentences, URL allow-list]
+    P --> OUT[Assistant payload +<br/>footer line]
+    REF --> OUT
+    ABS --> OUT
+    OUT --> L[JSON log line<br/>latency, flags, query_hash]
+    OUT --> RESP[HTTP response]

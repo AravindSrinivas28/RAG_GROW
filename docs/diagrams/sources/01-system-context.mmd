@@ -1,0 +1,40 @@
+flowchart TB
+    subgraph users["Users"]
+        U[Browser / API client]
+    end
+
+    subgraph app["M1 RAG application"]
+        UI[Static UI<br/>GET /]
+        API[FastAPI<br/>threads + messages]
+        RAG[Assistant pipeline<br/>router → retrieve → generate]
+        TS[(SQLite<br/>thread store)]
+        OBS[Structured logs<br/>m1_rag.chat]
+    end
+
+    subgraph data["Local / disk"]
+        CH[(Chroma<br/>vector index)]
+        STATE[ingest_state.json]
+    end
+
+    subgraph external["External services"]
+        WEB[Allowlisted web<br/>Groww / AMFI / SEBI]
+        HF[Hugging Face Hub<br/>BGE embeddings model]
+        LLM[OpenRouter or<br/>OpenAI-compatible API]
+    end
+
+    subgraph automation["Automation"]
+        GHA[GitHub Actions<br/>scheduled ingest]
+    end
+
+    U --> UI
+    U --> API
+    UI --> API
+    API --> RAG
+    API --> TS
+    API --> OBS
+    RAG --> CH
+    RAG --> LLM
+    GHA --> WEB
+    GHA --> HF
+    GHA --> CH
+    GHA -.->|ephemeral runner| STATE

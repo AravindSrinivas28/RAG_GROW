@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>M1 RAG — Facts-only mutual fund Q&amp;A</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header class="top-bar" role="banner">
+      <div class="top-bar__inner">
+        <h1 class="brand">M1 RAG</h1>
+        <p class="disclaimer" id="disclaimer">
+          Facts-only. No investment advice.
+        </p>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar" aria-label="Conversations">
+        <button type="button" class="btn btn--primary" id="btn-new-thread">New conversation</button>
+        <ul class="thread-list" id="thread-list"></ul>
+      </aside>
+
+      <main class="chat" aria-live="polite">
+        <section class="welcome" id="welcome">
+          <h2>Welcome</h2>
+          <p>
+            Ask factual questions about mutual fund schemes using information from our indexed official
+            sources. Answers include one source link and a last-updated line when available.
+          </p>
+          <p class="welcome__examples-label">Try an example:</p>
+          <div class="examples">
+            <button type="button" class="chip" data-question="What is the minimum SIP amount for this scheme?">
+              Minimum SIP
+            </button>
+            <button type="button" class="chip" data-question="What is the expense ratio?">
+              Expense ratio
+            </button>
+            <button type="button" class="chip" data-question="What is the exit load?">
+              Exit load
+            </button>
+          </div>
+        </section>
+
+        <div class="messages" id="messages" hidden></div>
+
+        <form class="composer" id="composer" autocomplete="off">
+          <label class="sr-only" for="user-input">Your question</label>
+          <textarea
+            id="user-input"
+            name="content"
+            rows="2"
+            maxlength="4000"
+            placeholder="Ask a factual question (no PAN, Aadhaar, or account numbers)…"
+            required
+          ></textarea>
+          <button type="submit" class="btn btn--send" id="btn-send">Send</button>
+        </form>
+        <p class="error" id="error-line" role="alert" hidden></p>
+      </main>
+    </div>
+
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>

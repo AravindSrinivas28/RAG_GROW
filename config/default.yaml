@@ -1,0 +1,76 @@
+# Non-secret defaults for M1 RAG. Override path with M1_RAG_CONFIG_FILE.
+# Secrets (API keys) MUST come from environment — see .env.example and phases/phase_0_foundation/SECRETS.md
+
+app:
+  name: m1-rag
+  env: development
+
+# Host/path allowlist for scraping (Phase 2). Phase 1 manifest adds AMFI/SEBI.
+allowlist:
+  hosts:
+    - groww.in
+    - www.amfiindia.in
+    - www.sebi.gov.in
+  # Optional: restrict to path prefixes per host (empty = whole host allowed)
+  path_prefixes_by_host:
+    groww.in:
+      - /mutual-funds/
+
+# Corpus manifest (Phase 1) — versioned URL list
+corpus:
+  manifest_path: phases/phase_1_corpus/corpus_manifest.yaml
+  max_urls_per_ingest_run: 40
+
+# Phase 2 — HTTP fetch, robots, throttle
+scrape:
+  user_agent: "M1RAG/0.1 (facts-only mutual fund corpus; educational use)"
+  delay_seconds: 1.0
+  timeout_seconds: 45
+  max_retries: 2
+  respect_robots_txt: true
+  store_raw_snapshots: false
+  raw_snapshots_dir: data/raw_snapshots
+
+# Phase 3 — chunk, embed, index (see docs/chunking-embedding-architecture.md)
+chunking:
+  tokenizer_model_id: BAAI/bge-small-en-v1.5
+  chunk_size_tokens: 512
+  overlap_tokens: 80
+
+embedding:
+  model_id: BAAI/bge-small-en-v1.5
+  model_version: "1"
+  dimensions: 384
+  batch_size: 16
+  device: null
+
+ingest:
+  state_path: data/ingest_state.json
+
+vector_db:
+  backend: chroma
+  collection_name: m1_rag_corpus
+  persist_directory: ./data/vector_store
+
+retrieval:
+  top_k: 8
+  # If set, abstain when the closest chunk distance exceeds this (Chroma cosine space; tune empirically).
+  max_distance: null
+
+# Phase 6 — grounded LLM (OpenRouter by default; see .env.example)
+llm:
+  model: openai/gpt-4o-mini
+  temperature: 0.2
+  max_tokens: 512
+  api_base: https://openrouter.ai/api/v1
+  http_referer: null
+  app_title: M1 RAG
+
+# Phase 7 — HTTP API thread store (SQLite; no PII columns)
+api:
+  thread_store_path: data/threads.sqlite
+
+# Phase 9 — observability (see src/m1_rag/observability.py); override with M1_RAG_LOG_LEVEL
+observability:
+  log_level: INFO
+  golden_cases_path: phases/phase_9_quality/golden_cases.yaml

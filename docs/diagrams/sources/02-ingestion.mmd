@@ -1,0 +1,29 @@
+flowchart LR
+    subgraph inputs["Inputs"]
+        M[corpus_manifest.yaml]
+        CFG[config/default.yaml]
+    end
+
+    subgraph phase2["Fetch & normalize"]
+        SC[scrape_corpus]
+        ND[NormalizedDocument<br/>text + metadata + content_hash]
+    end
+
+    subgraph phase3["Chunk & embed"]
+        CHK[HF tokenizer<br/>sliding windows]
+        EMB[sentence-transformers<br/>BAAI/bge-small-en-v1.5]
+        VEC[vectors 384-d]
+    end
+
+    subgraph store["Index"]
+        CHR[Chroma PersistentClient<br/>cosine + metadata]
+    end
+
+    M --> SC
+    CFG --> SC
+    SC --> ND
+    ND --> CHK
+    CHK --> EMB
+    EMB --> VEC
+    VEC --> CHR
+    ND -.->|skip if hash unchanged| STATE[(ingest state)]

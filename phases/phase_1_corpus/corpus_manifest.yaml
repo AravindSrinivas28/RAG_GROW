@@ -1,0 +1,132 @@
+# Versioned corpus manifest — Phase 1
+# Target: 15–25 document URLs — this manifest yields 25 unique URLs (5 hubs + 18 schemes + 2 regulatory).
+
+manifest_version: "1.0"
+description: "Groww AMC hubs + diversified scheme pages + AMFI/SEBI investor entry points"
+
+# Five AMC hub pages (seeds for expansion / crawl roots)
+seeds:
+  - amc_id: hdfc
+    url: https://groww.in/mutual-funds/amc/hdfc-mutual-funds
+  - amc_id: hsbc
+    url: https://groww.in/mutual-funds/amc/hsbc-mutual-funds
+  - amc_id: ppfas
+    url: https://groww.in/mutual-funds/amc/ppfas-mutual-funds
+  - amc_id: kotak
+    url: https://groww.in/mutual-funds/amc/kotak-mahindra-mutual-funds
+  - amc_id: zerodha
+    url: https://groww.in/mutual-funds/amc/zerodha-mutual-funds
+
+# Additional corpus URLs (scheme detail pages on Groww + official regulatory pages)
+entries:
+  # HDFC — large-cap, multi-cap, hybrid, debt short
+  - url: https://groww.in/mutual-funds/hdfc-large-cap-fund-direct-growth
+    amc_id: hdfc
+    scheme_name: "HDFC Large Cap Fund"
+    document_type: scheme_page
+    category: large_cap
+  - url: https://groww.in/mutual-funds/hdfc-multi-cap-fund-direct-growth
+    amc_id: hdfc
+    scheme_name: "HDFC Multi Cap Fund"
+    document_type: scheme_page
+    category: multi_cap
+  - url: https://groww.in/mutual-funds/hdfc-balanced-advantage-fund-direct-growth
+    amc_id: hdfc
+    scheme_name: "HDFC Balanced Advantage Fund"
+    document_type: scheme_page
+    category: hybrid_dynamic_asset
+  - url: https://groww.in/mutual-funds/hdfc-short-term-opportunities-fund-direct-growth
+    amc_id: hdfc
+    scheme_name: "HDFC Short Term Opportunities Fund"
+    document_type: scheme_page
+    category: debt_short
+
+  # HSBC — multi-cap, small-cap, debt
+  - url: https://groww.in/mutual-funds/hsbc-multi-cap-fund-direct-growth
+    amc_id: hsbc
+    scheme_name: "HSBC Multi Cap Fund"
+    document_type: scheme_page
+    category: multi_cap
+  - url: https://groww.in/mutual-funds/hsbc-small-cap-fund-direct-growth
+    amc_id: hsbc
+    scheme_name: "HSBC Small Cap Fund"
+    document_type: scheme_page
+    category: small_cap
+  - url: https://groww.in/mutual-funds/hsbc-low-duration-fund-direct-growth
+    amc_id: hsbc
+    scheme_name: "HSBC Low Duration Fund"
+    document_type: scheme_page
+    category: debt_low_duration
+
+  # PPFAS — ELSS, flexi/value, liquid
+  - url: https://groww.in/mutual-funds/parag-parikh-elss-tax-saver-fund-direct-growth
+    amc_id: ppfas
+    scheme_name: "Parag Parikh ELSS Tax Saver Fund"
+    document_type: scheme_page
+    category: elss
+  - url: https://groww.in/mutual-funds/parag-parikh-long-term-value-fund-direct-growth
+    amc_id: ppfas
+    scheme_name: "Parag Parikh Long Term Value Fund"
+    document_type: scheme_page
+    category: flexi_value
+  - url: https://groww.in/mutual-funds/parag-parikh-liquid-fund-direct-growth
+    amc_id: ppfas
+    scheme_name: "Parag Parikh Liquid Fund"
+    document_type: scheme_page
+    category: liquid
+
+  # Kotak
+  - url: https://groww.in/mutual-funds/kotak-multicap-fund-direct-growth
+    amc_id: kotak
+    scheme_name: "Kotak Multicap Fund"
+    document_type: scheme_page
+    category: multi_cap
+  - url: https://groww.in/mutual-funds/kotak-midcap-fund-direct-growth
+    amc_id: kotak
+    scheme_name: "Kotak Midcap Fund"
+    document_type: scheme_page
+    category: mid_cap
+  - url: https://groww.in/mutual-funds/kotak-bond-short-term-plan-direct-growth
+    amc_id: kotak
+    scheme_name: "Kotak Bond Short Term Plan"
+    document_type: scheme_page
+    category: debt_short
+  - url: https://groww.in/mutual-funds/kotak-emerging-equity-scheme-direct-growth
+    amc_id: kotak
+    scheme_name: "Kotak Emerging Equity Scheme"
+    document_type: scheme_page
+    category: mid_small_equity
+
+  # Zerodha — ELSS, index, overnight, multi-asset
+  - url: https://groww.in/mutual-funds/zerodha-elss-tax-saver-nifty-large-midcap-250-index-fund-direct-growth
+    amc_id: zerodha
+    scheme_name: "Zerodha ELSS Tax Saver (Nifty LargeMidcap 250 Index)"
+    document_type: scheme_page
+    category: elss
+  - url: https://groww.in/mutual-funds/zerodha-nifty-50-index-fund-direct-growth
+    amc_id: zerodha
+    scheme_name: "Zerodha Nifty 50 Index Fund"
+    document_type: scheme_page
+    category: index_large
+  - url: https://groww.in/mutual-funds/zerodha-overnight-fund-direct-growth
+    amc_id: zerodha
+    scheme_name: "Zerodha Overnight Fund"
+    document_type: scheme_page
+    category: overnight
+  - url: https://groww.in/mutual-funds/zerodha-multi-asset-passive-fof-direct-growth
+    amc_id: zerodha
+    scheme_name: "Zerodha Multi Asset Passive FOF"
+    document_type: scheme_page
+    category: multi_asset
+
+  # Official investor education entry points (verify periodically; replace with deeper pages in Phase 2 if needed)
+  - url: https://www.amfiindia.in/investor-knowledge-center
+    amc_id: null
+    scheme_name: null
+    document_type: regulatory
+    category: investor_education
+  - url: https://www.sebi.gov.in/
+    amc_id: null
+    scheme_name: null
+    document_type: regulatory
+    category: investor_education

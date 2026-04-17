@@ -1,0 +1,41 @@
+flowchart TB
+    subgraph presentation["Presentation"]
+        WEBUI[Browser UI<br/>disclaimer + chat + threads]
+    end
+
+    subgraph api_layer["API"]
+        HTTP[FastAPI<br/>/threads, /messages, /health, /static]
+    end
+
+    subgraph orchestration["Orchestration"]
+        ASST[assistant.run_assistant_turn]
+        ROUT[router.classify_route]
+    end
+
+    subgraph retrieval["Retrieval"]
+        RET[retrieve → RetrievedChunk]
+    end
+
+    subgraph generation["Generation"]
+        GEN[generation.generate_grounded_answer]
+    end
+
+    subgraph data_layer["Data"]
+        VDB[(Chroma)]
+        SQL[(SQLite threads)]
+    end
+
+    subgraph models["Models"]
+        BGE[BGE-small embeddings]
+        CHAT[Chat LLM via OpenRouter/OpenAI API]
+    end
+
+    WEBUI --> HTTP
+    HTTP --> ASST
+    ASST --> ROUT
+    ROUT --> RET
+    ROUT --> GEN
+    RET --> VDB
+    RET --> BGE
+    GEN --> CHAT
+    HTTP --> SQL

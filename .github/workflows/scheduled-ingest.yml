@@ -1,0 +1,53 @@
+# Phase 4: daily corpus refresh (scrape → chunk → embed → Chroma).
+# Schedule uses UTC. 03:45 UTC == 09:15 Asia/Kolkata (IST, no DST).
+name: Scheduled corpus ingest
+
+on:
+  schedule:
+    - cron: "45 3 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: scheduled-ingest-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run full ingest
+        run: |
+          set -o pipefail
+          python -m m1_rag.ingest | tee ingest_report.json
+        # Exit 0 = ok; 1 = failure; 2 = ingest JSON lists errors (partial failures)
+
+      - name: Job summary
+        if: always()
+        run: |
+          if [ -f ingest_report.json ]; then
+            echo "### Ingest report" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat ingest_report.json >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
