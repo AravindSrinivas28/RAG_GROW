@@ -98,6 +98,17 @@ Pinned transitive versions: `requirements.lock` (optional `pip install -r requir
 
 On the **free** tier, web services **spin down** when idle; the first request after idle can take ~30–60s while the instance wakes.
 
+### Deploy frontend on Vercel
+
+After the API is live on Render, deploy the Next.js app from the same GitHub repo:
+
+1. [Vercel](https://vercel.com) → **New Project** → import the repo.
+2. Set **Root Directory** to **`web`** (required — the Next app is not at the repo root).
+3. Add **`NEXT_PUBLIC_M1_RAG_API_URL`** = `https://<your-render-service>.onrender.com` (no trailing slash).
+4. Deploy and open the assigned `*.vercel.app` URL.
+
+Details: [`web/README.md`](web/README.md#deploy-on-vercel).
+
 ## Configuration
 
 - **Data** (committed): `config/default.yaml` — allowlist hosts, embedding model id, vector DB backend/name/path, retrieval `top_k`, `llm.*`, `api.thread_store_path`, `observability.*` (Phase 9).
