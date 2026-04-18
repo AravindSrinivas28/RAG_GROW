@@ -4,8 +4,61 @@
 const DEFAULT_FETCH_TIMEOUT_MS = 180_000;
 
 export function getApiBase(): string {
-  const raw = process.env.NEXT_PUBLIC_M1_RAG_API_URL ?? "http://127.0.0.1:8000";
+  const fromEnv = process.env.NEXT_PUBLIC_M1_RAG_API_URL;
+  const raw =
+    fromEnv !== undefined && String(fromEnv).trim() !== ""
+      ? String(fromEnv).trim()
+      : "http://127.0.0.1:8000";
   return raw.replace(/\/+$/, "");
+}
+
+/**
+ * HTTPS pages (Vercel) cannot call http://127.0.0.1 — the browser blocks it and
+ * Safari reports "Load failed". Fail fast with a clear message.
+ */
+export function validateApiBaseForBrowser(): void {
+  if (typeof window === "undefined") return;
+
+  const base = getApiBase();
+  let url: URL;
+  try {
+    url = new URL(base);
+  } catch {
+    throw new Error(
+      `Invalid NEXT_PUBLIC_M1_RAG_API_URL: "${base}". Use https://your-service.onrender.com`,
+    );
+  }
+
+  if (window.location.protocol !== "https:") return;
+
+  if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
+    throw new Error(
+      "API URL still points to localhost. In Vercel → Settings → Environment Variables, set NEXT_PUBLIC_M1_RAG_API_URL=https://YOUR-SERVICE.onrender.com (no trailing slash), save, then Redeploy (Production).",
+    );
+  }
+  if (url.protocol === "http:") {
+    throw new Error(
+      "API URL must use https:// when the site is served over HTTPS. Set NEXT_PUBLIC_M1_RAG_API_URL to your Render https URL and redeploy.",
+    );
+  }
+}
+
+function wrapNetworkError(e: unknown): Error {
+  if (e instanceof Error && e.name === "AbortError") return e;
+
+  const msg = e instanceof Error ? e.message : String(e);
+  const lower = msg.toLowerCase();
+  if (
+    lower.includes("load failed") ||
+    lower.includes("failed to fetch") ||
+    lower.includes("networkerror") ||
+    lower === "network request failed"
+  ) {
+    return new Error(
+      `Cannot reach ${getApiBase()}. Set NEXT_PUBLIC_M1_RAG_API_URL in Vercel to your Render https URL, redeploy, and ensure the Render service is running. (${msg})`,
+    );
+  }
+  return e instanceof Error ? e : new Error(msg);
 }
 
 async function fetchWithTimeout(
@@ -42,6 +95,8 @@ export type PostMessageResponse = {
 };
 
 export async function apiCreateThread(): Promise<CreateThreadResponse> {
+  validateApiBaseForBrowser();
+
   let r: Response;
   try {
     r = await fetchWithTimeout(`${getApiBase()}/threads`, { method: "POST" });
@@ -51,7 +106,7 @@ export async function apiCreateThread(): Promise<CreateThreadResponse> {
         `Request timed out after ${DEFAULT_FETCH_TIMEOUT_MS / 1000}s (is the API waking up on Render?)`,
       );
     }
-    throw e;
+    throw wrapNetworkError(e);
   }
   if (!r.ok) throw new Error(`Could not create conversation (${r.status})`);
   return r.json() as Promise<CreateThreadResponse>;
@@ -61,6 +116,8 @@ export async function apiPostMessage(
   threadId: string,
   content: string,
 ): Promise<PostMessageResponse> {
+  validateApiBaseForBrowser();
+
   let r: Response;
   try {
     r = await fetchWithTimeout(
@@ -77,7 +134,7 @@ export async function apiPostMessage(
         `Request timed out after ${DEFAULT_FETCH_TIMEOUT_MS / 1000}s (is the API waking up on Render?)`,
       );
     }
-    throw e;
+    throw wrapNetworkError(e);
   }
   const text = await r.text();
   let data: unknown;

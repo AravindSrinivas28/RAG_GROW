@@ -170,11 +170,11 @@ export function ChatApp() {
             <section className="welcome">
               <h2>API unavailable</h2>
               <p className="api-hint">
-                Start the backend (e.g. <code>m1-rag-api</code> on{" "}
-                <code>{getApiBase()}</code>
-                ) or set{" "}
-                <code>NEXT_PUBLIC_M1_RAG_API_URL</code> in{" "}
-                <code>.env.local</code>.
+                Deployed on Vercel? Set{" "}
+                <code>NEXT_PUBLIC_M1_RAG_API_URL</code> to your Render{" "}
+                <code>https://…onrender.com</code> URL and redeploy. Locally:
+                run <code>m1-rag-api</code> or point env at{" "}
+                <code>{getApiBase()}</code>.
               </p>
               <p className="error" role="alert">
                 {bootError}
