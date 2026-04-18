@@ -236,8 +236,9 @@ export function ChatApp() {
                   type="submit"
                   className="btn btn--send"
                   disabled={sending || !!bootError}
+                  aria-busy={sending}
                 >
-                  Send
+                  {sending ? "Sending…" : "Send"}
                 </button>
               </form>
               {error ? (

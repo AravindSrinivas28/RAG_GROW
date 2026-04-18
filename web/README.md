@@ -44,6 +44,8 @@ This app lives in the **`web/`** folder of the monorepo — set that when import
 
 Redeploy from Vercel whenever you change this variable or merge UI changes to the tracked branch.
 
+**Send stays disabled or shows “Sending…” forever:** the UI disables Send while a request to your API is in flight. On a cold Render service the first request can take **1–2 minutes**. If it exceeds **3 minutes**, the client times out and shows an error — redeploy the API or check Render logs. **`NEXT_PUBLIC_*` is baked in at build time** — after adding or changing it in Vercel, trigger a **new deployment** so the browser gets the correct Render URL (not `http://127.0.0.1:8000`).
+
 ## Production (self-hosted)
 
 ```bash
