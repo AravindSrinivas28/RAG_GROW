@@ -25,6 +25,8 @@ cp .env.local.example .env.local
 
 **502 on messages:** usually Vercel timeout when everything went through the proxy; latest client sends messages **directly to Render** when the proxy flag is on. Redeploy after pulling `main`.
 
+**404 on `POST .../messages`:** the API stores threads in SQLite on disk; after a **Render restart**, old `thread_id`s are gone. The UI **creates a new thread and retries** once. For production, attach a [Render disk](https://render.com/docs/disks) and point `api.thread_store_path` at it so threads survive restarts.
+
 ## Run Next.js
 
 ```bash

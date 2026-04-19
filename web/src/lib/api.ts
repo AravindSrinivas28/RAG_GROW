@@ -139,6 +139,14 @@ export type PostMessageResponse = {
   assistant: AssistantPayload;
 };
 
+/** Server no longer has this thread_id (e.g. Render restarted; SQLite was ephemeral). */
+export class ThreadGoneError extends Error {
+  constructor() {
+    super("thread not found");
+    this.name = "ThreadGoneError";
+  }
+}
+
 export async function apiCreateThread(): Promise<CreateThreadResponse> {
   validateApiUrlForBrowser(getApiBase());
 
@@ -191,9 +199,15 @@ export async function apiPostMessage(
   if (!r.ok) {
     const d = data as { detail?: unknown; message?: unknown };
     const detail = (d.detail ?? d.message ?? text) || "Request failed";
-    throw new Error(
-      typeof detail === "string" ? detail : JSON.stringify(detail),
-    );
+    const msg = typeof detail === "string" ? detail : JSON.stringify(detail);
+    if (
+      r.status === 404 &&
+      typeof detail === "string" &&
+      detail.toLowerCase().includes("thread not found")
+    ) {
+      throw new ThreadGoneError();
+    }
+    throw new Error(msg);
   }
   return data as PostMessageResponse;
 }

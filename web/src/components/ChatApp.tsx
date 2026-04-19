@@ -2,13 +2,19 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { apiCreateThread, apiPostMessage, getApiBase } from "@/lib/api";
+import {
+  apiCreateThread,
+  apiPostMessage,
+  getApiBase,
+  ThreadGoneError,
+} from "@/lib/api";
 import { ensureServerThread } from "@/lib/ensure-thread";
 import type { ChatMessage, ThreadEntry } from "@/lib/m1rag-storage";
 import {
   LS_ACTIVE,
   loadMessages,
   loadThreads,
+  msgKey,
   saveMessages,
   saveThreads,
 } from "@/lib/m1rag-storage";
@@ -74,7 +80,7 @@ export function ChatApp() {
       setError(null);
       setSending(true);
       try {
-        const tid = await ensureThreadId();
+        let tid = await ensureThreadId();
         const msgs: ChatMessage[] = [
           ...loadMessages(tid),
           { role: "user", content: trimmed },
@@ -83,27 +89,63 @@ export function ChatApp() {
         setInput("");
         setMessages(msgs);
 
-        const data = await apiPostMessage(tid, trimmed);
-        const a = data.assistant;
-        const assistantMsg: ChatMessage = {
-          role: "assistant",
-          answer_text: a.answer_text ?? "",
-          citation_url: a.citation_url,
-          last_updated: a.last_updated,
-          footer_line: a.footer_line,
-          refusal: a.refusal,
-          abstain: a.abstain,
+        const appendAssistant = (
+          threadId: string,
+          userMsgs: ChatMessage[],
+          data: Awaited<ReturnType<typeof apiPostMessage>>,
+        ) => {
+          const a = data.assistant;
+          const assistantMsg: ChatMessage = {
+            role: "assistant",
+            answer_text: a.answer_text ?? "",
+            citation_url: a.citation_url,
+            last_updated: a.last_updated,
+            footer_line: a.footer_line,
+            refusal: a.refusal,
+            abstain: a.abstain,
+          };
+          const withAssistant = [...userMsgs, assistantMsg];
+          saveMessages(threadId, withAssistant);
+          setMessages(withAssistant);
         };
-        const withAssistant = [...msgs, assistantMsg];
-        saveMessages(tid, withAssistant);
-        setMessages(withAssistant);
+
+        try {
+          const data = await apiPostMessage(tid, trimmed);
+          appendAssistant(tid, msgs, data);
+        } catch (err) {
+          if (!(err instanceof ThreadGoneError)) throw err;
+
+          const created = await apiCreateThread();
+          const newId = created.thread_id;
+          const list = loadThreads();
+          const mapped = list.map((t) =>
+            t.id === tid ? { ...t, id: newId } : t,
+          );
+          const next = mapped.some((t) => t.id === newId)
+            ? mapped
+            : [
+                ...mapped,
+                {
+                  id: newId,
+                  label: `Chat ${mapped.length + 1}`,
+                  createdAt: Date.now(),
+                },
+              ];
+          saveThreads(next);
+          localStorage.removeItem(msgKey(tid));
+          saveMessages(newId, msgs);
+          switchThread(newId);
+
+          const data = await apiPostMessage(newId, trimmed);
+          appendAssistant(newId, msgs, data);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : String(err));
       } finally {
         setSending(false);
       }
     },
-    [ensureThreadId],
+    [ensureThreadId, switchThread],
   );
 
   async function onNewThread() {
