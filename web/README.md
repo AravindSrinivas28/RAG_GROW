@@ -21,7 +21,9 @@ cp .env.local.example .env.local
 
 `NEXT_PUBLIC_M1_RAG_API_URL` must match the host/port where `m1-rag-api` listens (**no trailing slash**). For a backend on Render, use `https://your-service.onrender.com`.
 
-**Safari / “Load failed” to Render:** set **`NEXT_PUBLIC_API_VIA_VERCEL_PROXY=1`** on Vercel (keep **`NEXT_PUBLIC_M1_RAG_API_URL`** as your Render URL so `next.config` can rewrite `/api/m1/*` there). The browser only talks to your `*.vercel.app` origin; Next.js proxies to Render. Redeploy after changing env.
+**Safari / “Load failed” to Render:** set **`NEXT_PUBLIC_API_VIA_VERCEL_PROXY=1`** on Vercel (keep **`NEXT_PUBLIC_M1_RAG_API_URL`** as your Render URL — the server uses it to proxy `/api/m1/*` to Render). The browser only talks to your `*.vercel.app` origin.
+
+**502 / “Invalid response from server” on `/api/m1/.../messages`:** the proxy uses a **Route Handler** with **`maxDuration` 300s** so long RAG + LLM calls are not cut off by Vercel’s old rewrite timeout. On the **Hobby** plan, Vercel may still cap function duration (often **10s**) — upgrade to **Pro** or expect timeouts on slow turns. Redeploy after pulling the latest `web/` code.
 
 ## Run Next.js
 

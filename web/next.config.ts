@@ -1,25 +1,10 @@
 import type { NextConfig } from "next";
 
-/** Upstream FastAPI (e.g. Render). Used to rewrite /api/m1/* → backend (same-origin in browser). */
-function upstreamApiBase(): string | null {
-  const raw =
-    process.env.M1_RAG_UPSTREAM_API_URL?.trim() ||
-    process.env.NEXT_PUBLIC_M1_RAG_API_URL?.trim();
-  if (!raw) return null;
-  return raw.replace(/\/+$/, "");
-}
-
-const nextConfig: NextConfig = {
-  async rewrites() {
-    const upstream = upstreamApiBase();
-    if (!upstream) return [];
-    return [
-      {
-        source: "/api/m1/:path*",
-        destination: `${upstream}/:path*`,
-      },
-    ];
-  },
-};
+/**
+ * Proxy to Render is implemented in `src/app/api/m1/[[...path]]/route.ts`
+ * (Node runtime + maxDuration). Do not use rewrites here — Vercel’s external
+ * rewrite proxy times out on long RAG/LLM requests and returns 502.
+ */
+const nextConfig: NextConfig = {};
 
 export default nextConfig;
