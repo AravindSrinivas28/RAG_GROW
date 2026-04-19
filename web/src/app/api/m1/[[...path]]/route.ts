@@ -77,7 +77,11 @@ async function proxy(req: NextRequest, pathSegments: string[]) {
   const res = await fetch(dest, init);
 
   const out = new Headers(res.headers);
+  // Undici decompresses the body but often keeps Content-Encoding: gzip; forwarding
+  // that with an already-decoded stream breaks the browser (ERR_CONTENT_DECODING_FAILED).
   out.delete("transfer-encoding");
+  out.delete("content-encoding");
+  out.delete("content-length");
 
   return new NextResponse(res.body, {
     status: res.status,
