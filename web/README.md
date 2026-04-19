@@ -21,9 +21,9 @@ cp .env.local.example .env.local
 
 `NEXT_PUBLIC_M1_RAG_API_URL` must match the host/port where `m1-rag-api` listens (**no trailing slash**). For a backend on Render, use `https://your-service.onrender.com`.
 
-**Safari / “Load failed” to Render:** set **`NEXT_PUBLIC_API_VIA_VERCEL_PROXY=1`** on Vercel (keep **`NEXT_PUBLIC_M1_RAG_API_URL`** as your Render URL — the server uses it to proxy `/api/m1/*` to Render). The browser only talks to your `*.vercel.app` origin.
+**Safari / “Load failed” to Render:** set **`NEXT_PUBLIC_API_VIA_VERCEL_PROXY=1`** on Vercel (keep **`NEXT_PUBLIC_M1_RAG_API_URL`** as your Render URL). **`POST /threads`** uses same-origin **`/api/m1`** (proxied). **`POST .../messages`** (slow RAG + LLM) calls **Render directly** from the browser so Vercel’s **~10s Hobby limit** does not return **502** on long turns. Chrome usually works; Safari may still block cross-origin — then try without the proxy flag or use Chrome.
 
-**502 / “Invalid response from server” on `/api/m1/.../messages`:** the proxy uses a **Route Handler** with **`maxDuration` 300s** so long RAG + LLM calls are not cut off by Vercel’s old rewrite timeout. On the **Hobby** plan, Vercel may still cap function duration (often **10s**) — upgrade to **Pro** or expect timeouts on slow turns. Redeploy after pulling the latest `web/` code.
+**502 on messages:** usually Vercel timeout when everything went through the proxy; latest client sends messages **directly to Render** when the proxy flag is on. Redeploy after pulling `main`.
 
 ## Run Next.js
 

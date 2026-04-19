@@ -13,11 +13,8 @@ function useVercelSameOriginProxy(): boolean {
  * - Production: NEXT_PUBLIC_M1_RAG_API_URL (direct to Render, cross-origin)
  * - If NEXT_PUBLIC_API_VIA_VERCEL_PROXY=1: same-origin `/api/m1` (rewritten by Next.js to Render — avoids Safari “Load failed” on some cross-origin requests)
  */
-export function getApiBase(): string {
-  if (typeof window !== "undefined" && useVercelSameOriginProxy()) {
-    return `${window.location.origin}/api/m1`;
-  }
-
+/** Always the configured backend (`NEXT_PUBLIC_M1_RAG_API_URL`), never the `/api/m1` proxy. */
+function getDirectApiBase(): string {
   const fromEnv = process.env.NEXT_PUBLIC_M1_RAG_API_URL;
   const raw =
     fromEnv !== undefined && String(fromEnv).trim() !== ""
@@ -26,26 +23,44 @@ export function getApiBase(): string {
   return raw.replace(/\/+$/, "");
 }
 
+export function getApiBase(): string {
+  if (typeof window !== "undefined" && useVercelSameOriginProxy()) {
+    return `${window.location.origin}/api/m1`;
+  }
+
+  return getDirectApiBase();
+}
+
+/**
+ * Base URL for `POST .../messages` (RAG + LLM — can take minutes).
+ * When same-origin proxy is enabled, we still call Render **directly** here so
+ * Vercel’s serverless function is not in the middle (Hobby ~10s limit → 502).
+ * `POST /threads` stays on the fast proxy path for Safari-friendly same-origin.
+ */
+export function getMessagesApiBase(): string {
+  if (typeof window !== "undefined" && useVercelSameOriginProxy()) {
+    return getDirectApiBase();
+  }
+  return getApiBase();
+}
+
 /**
  * HTTPS pages (Vercel) cannot call http://127.0.0.1 — the browser blocks it and
  * Safari reports "Load failed". Fail fast with a clear message.
  */
-export function validateApiBaseForBrowser(): void {
+export function validateApiUrlForBrowser(base: string): void {
   if (typeof window === "undefined") return;
 
-  const base = getApiBase();
   let url: URL;
   try {
     url = new URL(base);
   } catch {
     throw new Error(
-      `Invalid NEXT_PUBLIC_M1_RAG_API_URL: "${base}". Use https://your-service.onrender.com`,
+      `Invalid API URL: "${base}". Use https://your-service.onrender.com`,
     );
   }
 
   if (window.location.protocol !== "https:") return;
-
-  if (useVercelSameOriginProxy()) return;
 
   if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
     throw new Error(
@@ -59,7 +74,14 @@ export function validateApiBaseForBrowser(): void {
   }
 }
 
-function wrapNetworkError(e: unknown): Error {
+export function validateApiBaseForBrowser(): void {
+  validateApiUrlForBrowser(getApiBase());
+}
+
+function wrapNetworkError(
+  e: unknown,
+  kind: "threads" | "messages",
+): Error {
   if (e instanceof Error && e.name === "AbortError") return e;
 
   const msg = e instanceof Error ? e.message : String(e);
@@ -70,10 +92,15 @@ function wrapNetworkError(e: unknown): Error {
     lower.includes("networkerror") ||
     lower === "network request failed"
   ) {
+    const base =
+      kind === "messages" ? getMessagesApiBase() : getApiBase();
+    if (useVercelSameOriginProxy() && kind === "threads") {
+      return new Error(
+        `Cannot reach API via Vercel proxy (${base}). Ensure NEXT_PUBLIC_M1_RAG_API_URL is set, redeploy, and that Render is running. (${msg})`,
+      );
+    }
     return new Error(
-      useVercelSameOriginProxy()
-        ? `Cannot reach API via Vercel proxy (${getApiBase()}). Ensure NEXT_PUBLIC_M1_RAG_API_URL is set (used for rewrites), redeploy, and that Render is running. (${msg})`
-        : `Cannot reach ${getApiBase()}. Set NEXT_PUBLIC_M1_RAG_API_URL in Vercel to your Render https URL, redeploy, and ensure the Render service is running — or set NEXT_PUBLIC_API_VIA_VERCEL_PROXY=1 to route via same-origin /api/m1. (${msg})`,
+      `Cannot reach ${base}. Set NEXT_PUBLIC_M1_RAG_API_URL in Vercel to your Render https URL, redeploy, and ensure the Render service is running. (${msg})`,
     );
   }
   return e instanceof Error ? e : new Error(msg);
@@ -113,7 +140,7 @@ export type PostMessageResponse = {
 };
 
 export async function apiCreateThread(): Promise<CreateThreadResponse> {
-  validateApiBaseForBrowser();
+  validateApiUrlForBrowser(getApiBase());
 
   let r: Response;
   try {
@@ -124,7 +151,7 @@ export async function apiCreateThread(): Promise<CreateThreadResponse> {
         `Request timed out after ${DEFAULT_FETCH_TIMEOUT_MS / 1000}s (is the API waking up on Render?)`,
       );
     }
-    throw wrapNetworkError(e);
+    throw wrapNetworkError(e, "threads");
   }
   if (!r.ok) throw new Error(`Could not create conversation (${r.status})`);
   return r.json() as Promise<CreateThreadResponse>;
@@ -134,12 +161,12 @@ export async function apiPostMessage(
   threadId: string,
   content: string,
 ): Promise<PostMessageResponse> {
-  validateApiBaseForBrowser();
+  validateApiUrlForBrowser(getMessagesApiBase());
 
   let r: Response;
   try {
     r = await fetchWithTimeout(
-      `${getApiBase()}/threads/${encodeURIComponent(threadId)}/messages`,
+      `${getMessagesApiBase()}/threads/${encodeURIComponent(threadId)}/messages`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -152,7 +179,7 @@ export async function apiPostMessage(
         `Request timed out after ${DEFAULT_FETCH_TIMEOUT_MS / 1000}s (is the API waking up on Render?)`,
       );
     }
-    throw wrapNetworkError(e);
+    throw wrapNetworkError(e, "messages");
   }
   const text = await r.text();
   let data: unknown;
