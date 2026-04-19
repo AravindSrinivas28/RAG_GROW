@@ -105,7 +105,8 @@ After the API is live on Render, deploy the Next.js app from the same GitHub rep
 1. [Vercel](https://vercel.com) → **New Project** → import the repo.
 2. Set **Root Directory** to **`web`** (required — the Next app is not at the repo root).
 3. Add **`NEXT_PUBLIC_M1_RAG_API_URL`** = `https://<your-render-service>.onrender.com` (no trailing slash).
-4. Deploy and open the assigned `*.vercel.app` URL.
+4. If the UI shows **“Load failed”** / cannot reach Render from the browser, add **`NEXT_PUBLIC_API_VIA_VERCEL_PROXY=1`** (same Render URL stays in `NEXT_PUBLIC_M1_RAG_API_URL` for server-side rewrites) and redeploy — see [`web/README.md`](web/README.md).
+5. Deploy and open the assigned `*.vercel.app` URL.
 
 Details: [`web/README.md`](web/README.md#deploy-on-vercel).
 

@@ -3,7 +3,21 @@
 /** Long enough for Render cold start + embedding + LLM (ms). */
 const DEFAULT_FETCH_TIMEOUT_MS = 180_000;
 
+function useVercelSameOriginProxy(): boolean {
+  return process.env.NEXT_PUBLIC_API_VIA_VERCEL_PROXY === "1";
+}
+
+/**
+ * Base URL for FastAPI calls.
+ * - Default local: http://127.0.0.1:8000
+ * - Production: NEXT_PUBLIC_M1_RAG_API_URL (direct to Render, cross-origin)
+ * - If NEXT_PUBLIC_API_VIA_VERCEL_PROXY=1: same-origin `/api/m1` (rewritten by Next.js to Render — avoids Safari “Load failed” on some cross-origin requests)
+ */
 export function getApiBase(): string {
+  if (typeof window !== "undefined" && useVercelSameOriginProxy()) {
+    return `${window.location.origin}/api/m1`;
+  }
+
   const fromEnv = process.env.NEXT_PUBLIC_M1_RAG_API_URL;
   const raw =
     fromEnv !== undefined && String(fromEnv).trim() !== ""
@@ -31,6 +45,8 @@ export function validateApiBaseForBrowser(): void {
 
   if (window.location.protocol !== "https:") return;
 
+  if (useVercelSameOriginProxy()) return;
+
   if (url.hostname === "localhost" || url.hostname === "127.0.0.1") {
     throw new Error(
       "API URL still points to localhost. In Vercel → Settings → Environment Variables, set NEXT_PUBLIC_M1_RAG_API_URL=https://YOUR-SERVICE.onrender.com (no trailing slash), save, then Redeploy (Production).",
@@ -55,7 +71,9 @@ function wrapNetworkError(e: unknown): Error {
     lower === "network request failed"
   ) {
     return new Error(
-      `Cannot reach ${getApiBase()}. Set NEXT_PUBLIC_M1_RAG_API_URL in Vercel to your Render https URL, redeploy, and ensure the Render service is running. (${msg})`,
+      useVercelSameOriginProxy()
+        ? `Cannot reach API via Vercel proxy (${getApiBase()}). Ensure NEXT_PUBLIC_M1_RAG_API_URL is set (used for rewrites), redeploy, and that Render is running. (${msg})`
+        : `Cannot reach ${getApiBase()}. Set NEXT_PUBLIC_M1_RAG_API_URL in Vercel to your Render https URL, redeploy, and ensure the Render service is running — or set NEXT_PUBLIC_API_VIA_VERCEL_PROXY=1 to route via same-origin /api/m1. (${msg})`,
     );
   }
   return e instanceof Error ? e : new Error(msg);

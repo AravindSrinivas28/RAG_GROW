@@ -21,6 +21,8 @@ cp .env.local.example .env.local
 
 `NEXT_PUBLIC_M1_RAG_API_URL` must match the host/port where `m1-rag-api` listens (**no trailing slash**). For a backend on Render, use `https://your-service.onrender.com`.
 
+**Safari / “Load failed” to Render:** set **`NEXT_PUBLIC_API_VIA_VERCEL_PROXY=1`** on Vercel (keep **`NEXT_PUBLIC_M1_RAG_API_URL`** as your Render URL so `next.config` can rewrite `/api/m1/*` there). The browser only talks to your `*.vercel.app` origin; Next.js proxies to Render. Redeploy after changing env.
+
 ## Run Next.js
 
 ```bash
